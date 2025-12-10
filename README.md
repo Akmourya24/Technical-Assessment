@@ -141,4 +141,6 @@ Username: emilys
 Password: emilyspass
 
 
-🧑‍💻 AuthorAlok MouryaFrontend Developer • React • Next.js
+🧑‍💻 Author 
+Alok Mourya
+Frontend Developer • React • Next.js
