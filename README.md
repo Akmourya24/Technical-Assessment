@@ -111,9 +111,7 @@ We chose **Zustand** for this project to handle global state.
 │   └── useUsersStore.js
 ├── /utils               # Helper functions
 │   └── api.js
-└── ...
-
-
+```
 ## 🛠 Installation & Setup
 
 Follow these steps to set up the project locally.
@@ -124,15 +122,16 @@ Follow these steps to set up the project locally.
 git clone [https://github.com/Akmourya24/Technical-Assessment.git]
 
 cd help-study-abroad
-
+```
 Install dependenciesBashnpm install
-Configure Environmen
-t 
+Configure Environment 
+```
 NEXTAUTH_URL=http://localhost:3000
-
+```
 Run in Development ModeBashnpm 
+```
 run dev
-
+```
 
 🔑 Demo CredentialsAccess the application using these test 
 
