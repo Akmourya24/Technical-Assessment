@@ -1,41 +1,52 @@
 import { create } from 'zustand';
 
 export const useProductsStore = create((set, get) => ({
-  productsCache: {}, // cache keys: `list|limit=...|skip=...|q=...|cat=...`
+  // --- Cache Storage ---
+  // Key format: "q=...&cat=...&skip=...&limit=..."
+  // Why: Allows us to instantly restore the UI when a user returns to a specific page/filter combo.
+  productsCache: {}, 
+  
+  // Key format: "productId"
+  // Why: Prevents re-fetching a product if we visited it recently.
+  productDetailCache: {}, 
+  
   categories: [],
-  productDetails: {}, // cache individual product by id
   loading: false,
   error: null,
 
-  // Fetch categories once
-  fetchCategories: async (signal) => {
+  // --- Actions ---
+
+  // 1. Fetch Categories (Cached)
+  fetchCategories: async () => {
     const { categories } = get();
+    // Return immediately if already loaded
     if (categories.length > 0) return categories;
 
     set({ loading: true, error: null });
     try {
-      const res = await fetch('https://dummyjson.com/products/categories', { signal });
+      const res = await fetch('https://dummyjson.com/products/categories');
       const data = await res.json();
-      // DummyJSON sometimes returns objects or strings depending on version, 
-      // ensuring we handle simple array of strings or objects.
+      // Normalize data (handle if API returns objects or strings)
       const categoryList = data.map(c => typeof c === 'object' ? c.slug : c);
+      
       set({ categories: categoryList, loading: false });
       return categoryList;
     } catch (err) {
-      if (err.name === 'AbortError') {
-        // request was aborted, keep previous state
-        return [];
-      }
       set({ error: err.message, loading: false });
       return [];
     }
   },
 
-  // Fetch product list with caching
-  fetchProducts: async ({ limit = 10, skip = 0, q = '', category = '' } = {}, signal) => {
-    const key = `list|limit=${limit}&skip=${skip}|cat=${category}|q=${q}`;
-    const cache = get().productsCache[key];
-    if (cache) return cache;
+  // 2. Fetch Products List (Cached)
+  fetchProducts: async ({ limit = 8, skip = 0, q = '', category = '' } = {}) => {
+    // Generate unique Cache Key
+    const cacheKey = `q=${q}&cat=${category}&skip=${skip}&limit=${limit}`;
+    
+    // Check Cache
+    const cachedData = get().productsCache[cacheKey];
+    if (cachedData) {
+      return cachedData; // Return cached result immediately
+    }
 
     set({ loading: true, error: null });
     try {
@@ -49,43 +60,41 @@ export const useProductsStore = create((set, get) => ({
         url = `https://dummyjson.com/products?limit=${limit}&skip=${skip}`;
       }
 
-      const res = await fetch(url, { signal });
+      const res = await fetch(url);
       const data = await res.json();
       
+      // Update Cache
       set((state) => ({ 
-        productsCache: { ...state.productsCache, [key]: data }, 
+        productsCache: { ...state.productsCache, [cacheKey]: data }, 
         loading: false 
       }));
       return data;
     } catch (err) {
-      if (err.name === 'AbortError') {
-        // request aborted - do not update error state
-        return null;
-      }
       set({ error: err.message, loading: false });
       return null;
     }
   },
 
-  // Fetch single product by id with caching
-  fetchProductById: async (id, signal) => {
+  // 3. Fetch Single Product (Cached)
+  fetchProductById: async (id) => {
     if (!id) return null;
-    const cached = get().productDetails[id];
-    if (cached) return cached;
+    
+    // Check Cache
+    const cachedProduct = get().productDetailCache[id];
+    if (cachedProduct) return cachedProduct;
 
     set({ loading: true, error: null });
     try {
-      const res = await fetch(`https://dummyjson.com/products/${id}`, { signal });
+      const res = await fetch(`https://dummyjson.com/products/${id}`);
       const data = await res.json();
+      
+      // Update Cache
       set((state) => ({ 
-        productDetails: { ...state.productDetails, [id]: data }, 
+        productDetailCache: { ...state.productDetailCache, [id]: data }, 
         loading: false 
       }));
       return data;
     } catch (err) {
-      if (err.name === 'AbortError') {
-        return null;
-      }
       set({ error: err.message, loading: false });
       return null;
     }

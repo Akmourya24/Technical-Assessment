@@ -1,54 +1,35 @@
-"use client"
+"use client";
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Container,
-  Typography,
-  Box,
-  CircularProgress,
-  Button,
-  Grid,
-  Card,
-  CardContent,
-  Chip,
-  Divider,
-  Stack,
-  Rating,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Paper,
-  Alert
+  Container, Typography, Box, CircularProgress, Button, Grid, Card, CardContent,
+  Chip, Divider, Stack, Rating, List, ListItem, ListItemText, ListItemIcon, Paper
 } from '@mui/material';
 import { 
-  ArrowBack, 
-  VerifiedUser, 
-  Loop, 
-  LocalShipping, 
-  Comment,
-  ShoppingCart,
-  FlashOn
+  ArrowBack, VerifiedUser, Loop, LocalShipping, Comment, ShoppingCart, FlashOn
 } from '@mui/icons-material';
-import { ImageCarousel } from '../../../components/ImageCarousel.jsx';
+import ImageCarousel from '../../../components/ImageCarousel.jsx'; // Memoized Import
 import { useProductsStore } from '../../../stores/useProductsStore.jsx';
 
 export default function ProductDetailPage() {
   const params = useParams();
   const { id } = params;
-  const fetchProductById = useProductsStore((s) => s.fetchProductById);
-  const loading = useProductsStore((s) => s.loading);
+  const { fetchProductById, loading } = useProductsStore();
   const [product, setProduct] = useState(null);
 
+  // Performance: Fetches from cache if available, otherwise hits API
   useEffect(() => {
     if (!id) return;
     let mounted = true;
-    const controller = new AbortController();
-    fetchProductById(id, controller.signal).then((data) => {
-      if (mounted && data) setProduct(data);
-    });
-    return () => { mounted = false; controller.abort(); };
+    
+    const load = async () => {
+      const data = await fetchProductById(id);
+      if (mounted) setProduct(data);
+    };
+    load();
+    
+    return () => { mounted = false; };
   }, [id, fetchProductById]);
 
   if (loading || !product) {
@@ -61,7 +42,6 @@ export default function ProductDetailPage() {
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
-      {/* Top Bar */}
       <Link href="/products" passHref style={{ textDecoration: 'none' }}>
         <Button startIcon={<ArrowBack />} sx={{ mb: 3, color: 'text.secondary' }}>
           Back to Catalog
@@ -70,20 +50,14 @@ export default function ProductDetailPage() {
 
       <Card elevation={3} sx={{ borderRadius: 3, overflow: 'visible' }}>
         <CardContent sx={{ p: { xs: 2, md: 4 } }}>
-          
-          {/* MASTER GRID CONTAINER - Starts the 2-Column Layout */}
           <Grid container spacing={6}>
             
-            {/* ==============================================
-                LEFT COLUMN: Image, Warranty, Reviews 
-               ============================================== */}
+            {/* --- LEFT COLUMN --- */}
             <Grid item xs={12} md={5} lg={4}>
               <Box sx={{ position: 'sticky', top: 20 }}>
-                
-                {/* 1. The Image Carousel */}
+                {/* Memoized Carousel */}
                 <ImageCarousel images={product.images} />
 
-                {/* 2. Warranty & Policies (Below Image) */}
                 <Paper variant="outlined" sx={{ mt: 3, p: 2, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px dashed #ccc' }}>
                   <Typography variant="subtitle2" fontWeight="bold" gutterBottom sx={{ textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: 1 }}>
                     Buyer Protection
@@ -91,32 +65,19 @@ export default function ProductDetailPage() {
                   <List dense disablePadding>
                     <ListItem disableGutters sx={{ py: 0.5 }}>
                       <ListItemIcon sx={{ minWidth: 32 }}><VerifiedUser fontSize="small" color="primary" /></ListItemIcon>
-                      <ListItemText 
-                        primary="Warranty" 
-                        secondary={product.warrantyInformation || "1 Year Standard Warranty"} 
-                        primaryTypographyProps={{ variant: 'body2', fontWeight: 600 }}
-                      />
+                      <ListItemText primary="Warranty" secondary={product.warrantyInformation || "1 Year"} />
                     </ListItem>
                     <ListItem disableGutters sx={{ py: 0.5 }}>
                       <ListItemIcon sx={{ minWidth: 32 }}><Loop fontSize="small" color="primary" /></ListItemIcon>
-                      <ListItemText 
-                        primary="Returns" 
-                        secondary={product.returnPolicy || "30-Day Returns"} 
-                        primaryTypographyProps={{ variant: 'body2', fontWeight: 600 }}
-                      />
+                      <ListItemText primary="Returns" secondary={product.returnPolicy || "30-Day Returns"} />
                     </ListItem>
                     <ListItem disableGutters sx={{ py: 0.5 }}>
                       <ListItemIcon sx={{ minWidth: 32 }}><LocalShipping fontSize="small" color="primary" /></ListItemIcon>
-                      <ListItemText 
-                        primary="Shipping" 
-                        secondary={product.shippingInformation || "Free Shipping"} 
-                        primaryTypographyProps={{ variant: 'body2', fontWeight: 600 }}
-                      />
+                      <ListItemText primary="Shipping" secondary={product.shippingInformation || "Free Shipping"} />
                     </ListItem>
                   </List>
                 </Paper>
 
-                {/* 3. Reviews Snapshot (Below Image) */}
                 {product.reviews && product.reviews.length > 0 && (
                   <Box mt={3}>
                     <Typography variant="subtitle2" fontWeight="bold" gutterBottom display="flex" alignItems="center">
@@ -141,19 +102,11 @@ export default function ProductDetailPage() {
               </Box>
             </Grid>
 
-            {/* ==============================================
-                RIGHT COLUMN: Title, Price, Description 
-               ============================================== */}
+            {/* --- RIGHT COLUMN --- */}
             <Grid item xs={12} md={7} lg={8}>
               <Box>
-                {/* Header: Category & Stock */}
                 <Stack direction="row" spacing={1} mb={2}>
-                   <Chip 
-                     label={product.category} 
-                     color="primary" 
-                     size="small" 
-                     sx={{ textTransform: 'capitalize', fontWeight: 600 }} 
-                   />
+                   <Chip label={product.category} color="primary" size="small" sx={{ textTransform: 'capitalize', fontWeight: 600 }} />
                    <Chip 
                     label={product.stock > 0 ? 'In Stock' : 'Out of Stock'} 
                     color={product.stock > 0 ? 'success' : 'error'} 
@@ -163,12 +116,10 @@ export default function ProductDetailPage() {
                   />
                 </Stack>
 
-                {/* Product Title */}
                 <Typography variant="h3" fontWeight="bold" sx={{ mb: 1, fontSize: { xs: '1.8rem', md: '2.5rem' } }}>
                   {product.title}
                 </Typography>
                 
-                {/* Rating & Brand Line */}
                 <Stack direction="row" alignItems="center" spacing={2} mb={3}>
                   <Rating value={product.rating} readOnly precision={0.1} />
                   <Typography variant="body2" color="text.secondary">
@@ -176,7 +127,6 @@ export default function ProductDetailPage() {
                   </Typography>
                 </Stack>
 
-                {/* Price Box */}
                 <Box mb={4} p={3} bgcolor="#f0f7ff" borderRadius={3} border="1px solid #e1effe">
                   <Stack direction="row" alignItems="baseline" spacing={2}>
                     <Typography variant="h3" color="primary.main" fontWeight="800">
@@ -201,36 +151,22 @@ export default function ProductDetailPage() {
                   </Typography>
                 </Box>
 
-                {/* Main Actions */}
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={4}>
-                  <Button 
-                    variant="contained" 
-                    size="large" 
-                    startIcon={<ShoppingCart />}
-                    sx={{ py: 1.5, px: 4, fontWeight: 'bold', borderRadius: 2 }}
-                    disableElevation
-                  >
+                  <Button variant="contained" size="large" startIcon={<ShoppingCart />} sx={{ py: 1.5, px: 4, fontWeight: 'bold', borderRadius: 2 }} disableElevation>
                     Add to Cart
                   </Button>
-                  <Button 
-                    variant="outlined" 
-                    size="large" 
-                    startIcon={<FlashOn />}
-                    sx={{ py: 1.5, px: 4, fontWeight: 'bold', borderRadius: 2, borderWidth: 2 }}
-                  >
+                  <Button variant="outlined" size="large" startIcon={<FlashOn />} sx={{ py: 1.5, px: 4, fontWeight: 'bold', borderRadius: 2, borderWidth: 2 }}>
                     Buy Now
                   </Button>
                 </Stack>
 
                 <Divider sx={{ my: 4 }} />
 
-                {/* Description */}
                 <Typography variant="h6" fontWeight="bold" gutterBottom>Product Description</Typography>
                 <Typography variant="body1" color="text.secondary" paragraph sx={{ lineHeight: 1.8, fontSize: '1.05rem' }}>
                   {product.description}
                 </Typography>
 
-                {/* Technical Specs Grid */}
                 <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mt: 4 }}>Specifications</Typography>
                 <Grid container spacing={2}>
                    <Grid item xs={6} sm={4}>
@@ -251,23 +187,10 @@ export default function ProductDetailPage() {
                         <Typography variant="body2" fontWeight="bold">{product.minimumOrderQuantity} Units</Typography>
                       </Paper>
                    </Grid>
-                   <Grid item xs={6} sm={4}>
-                      <Paper variant="outlined" sx={{ p: 2, bgcolor: '#fafafa' }}>
-                        <Typography variant="caption" color="text.secondary" display="block">Dimensions</Typography>
-                        <Typography variant="body2" fontWeight="bold">
-                          {product.dimensions?.width} x {product.dimensions?.height} cm
-                        </Typography>
-                      </Paper>
-                   </Grid>
                 </Grid>
-
               </Box>
             </Grid>
-            {/* END RIGHT COLUMN */}
-
           </Grid>
-          {/* END MASTER GRID CONTAINER */}
-
         </CardContent>
       </Card>
     </Container>

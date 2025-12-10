@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Box, MobileStepper, Button, Paper } from '@mui/material';
 import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
 
-export function ImageCarousel({ images = [] }) {
+const ImageCarousel = ({ images = [] }) => {
   const [activeStep, setActiveStep] = useState(0);
   const maxSteps = images.length;
 
@@ -12,18 +12,18 @@ export function ImageCarousel({ images = [] }) {
   if (!images.length) return null;
 
   return (
-    <Box sx={{ width: '100%', flexGrow: 1 }}>
+    <Box sx={{ width: '100%', mb: 2 }}>
       <Paper 
         variant="outlined" 
         sx={{ 
-          height: 400, 
+          height: 300, 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center', 
-          bgcolor: '#fafafa',
+          bgcolor: '#fff',
           borderRadius: 2,
           overflow: 'hidden',
-          mb: 2
+          p: 2
         }}
       >
         <img 
@@ -32,7 +32,7 @@ export function ImageCarousel({ images = [] }) {
           style={{ 
             maxWidth: '100%', 
             maxHeight: '100%', 
-            objectFit: 'contain',
+            objectFit: 'contain', 
             display: 'block' 
           }} 
         />
@@ -43,6 +43,7 @@ export function ImageCarousel({ images = [] }) {
           steps={maxSteps}
           position="static"
           activeStep={activeStep}
+          variant="dots"
           nextButton={
             <Button size="small" onClick={handleNext}>
               Next <KeyboardArrowRight />
@@ -53,8 +54,12 @@ export function ImageCarousel({ images = [] }) {
               <KeyboardArrowLeft /> Back
             </Button>
           }
+          sx={{ bgcolor: 'transparent', p: 0 }}
         />
       )}
     </Box>
   );
-}
+};
+
+// Optimization: Prevents carousel flicker/re-render when parent (Details Page) re-renders
+export default React.memo(ImageCarousel);

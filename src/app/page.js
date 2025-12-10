@@ -1,9 +1,9 @@
-import User from './users/page.jsx';
+import Login from './auth/login/page.jsx';
 
 export default function Home() {
   return (
     <div>
-<User />
+<Login />
     </div>
   );
 }

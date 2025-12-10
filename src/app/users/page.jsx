@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Container,
   Table,
@@ -22,67 +22,105 @@ import {
   Tooltip
 } from '@mui/material';
 import { Search, Visibility } from '@mui/icons-material';
+import { useUserStore } from '../../stores/useUserStore.jsx';
+import UserDetailView from '../users/[id].jsx/page.jsx';
 
-// Import the details component
-import UserDetailView from './[id].jsx/page.jsx'; 
+// --- Sub-Component: Memoized Table Row ---
+// Optimization: Prevents unnecessary re-renders of rows when parent state changes
+const UserTableRow = React.memo(({ user, onViewDetails }) => {
+  return (
+    <TableRow hover>
+      <TableCell>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <Avatar src={user.image} sx={{ width: 35, height: 35 }} />
+          <Typography variant="subtitle2">{user.firstName} {user.lastName}</Typography>
+        </Stack>
+      </TableCell>
+      <TableCell>{user.email}</TableCell>
+      <TableCell>
+        <Chip label={user.gender} size="small" sx={{ textTransform: 'capitalize' }} />
+      </TableCell>
+      <TableCell>{user.phone}</TableCell>
+      <TableCell>{user.company?.name}</TableCell>
+      <TableCell align="right">
+        <Tooltip title="View Full Details">
+          <IconButton color="primary" size="small" onClick={() => onViewDetails(user.id)}>
+            <Visibility fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </TableCell>
+    </TableRow>
+  );
+});
 
+UserTableRow.displayName = 'UserTableRow';
+
+// --- Main Component ---
 const Users = () => {
+  // Local UI State
   const [view, setView] = useState('list');
-  const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [loading, setLoading] = useState(false);
-  
-  // Pagination & Search
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  
+  // Data State (from Store + Local for list display)
+  const [users, setUsers] = useState([]);
   const [totalUsers, setTotalUsers] = useState(0);
 
-  // Fetch Logic
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const skip = page * rowsPerPage;
-      const baseUrl = 'https://dummyjson.com/users';
-      const url = searchQuery 
-        ? `${baseUrl}/search?q=${searchQuery}&limit=${rowsPerPage}&skip=${skip}`
-        : `${baseUrl}?limit=${rowsPerPage}&skip=${skip}`;
-      
-      const response = await fetch(url);
-      const data = await response.json();
+  // Access Store
+  const { fetchUsers, fetchUserDetails, loading } = useUserStore();
+
+  // Optimization: useCallback prevents function recreation on re-renders
+  const loadData = useCallback(async () => {
+    const data = await fetchUsers({ page, rowsPerPage, searchQuery });
+    if (data) {
       setUsers(data.users);
       setTotalUsers(data.total);
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
     }
-  }, [page, rowsPerPage, searchQuery]);
+  }, [page, rowsPerPage, searchQuery, fetchUsers]);
 
+  // Debounce logic for search
   useEffect(() => {
-    const timer = setTimeout(() => fetchUsers(), 500);
+    const timer = setTimeout(() => {
+      loadData();
+    }, 500); 
     return () => clearTimeout(timer);
-  }, [fetchUsers]);
+  }, [loadData]);
 
-  const fetchUserDetails = async (id) => {
-    setLoading(true);
-    try {
-      const res = await fetch(`https://dummyjson.com/users/${id}`);
-      const data = await res.json();
+  // Handlers wrapped in useCallback
+  const handleViewDetails = useCallback(async (id) => {
+    const data = await fetchUserDetails(id);
+    if (data) {
       setSelectedUser(data);
       setView('detail');
-    } catch (e) { console.error(e); } finally { setLoading(false); }
-  };
+    }
+  }, [fetchUserDetails]);
 
-  const handlePageChange = (e, newPage) => setPage(newPage);
-  const handleRowsChange = (e) => {
-    setRowsPerPage(parseInt(e.target.value, 10));
+  const handleBackToList = useCallback(() => {
+    setView('list');
+    setSelectedUser(null);
+  }, []);
+
+  const handleSearchChange = useCallback((e) => {
+    setSearchQuery(e.target.value);
+    setPage(0); // Reset to first page on new search
+  }, []);
+
+  const handlePageChange = useCallback((event, newPage) => {
+    setPage(newPage);
+  }, []);
+
+  const handleRowsPerPageChange = useCallback((event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
-  };
+  }, []);
 
-  // Render View Switcher
+
+  // --- Render ---
+
   if (view === 'detail' && selectedUser) {
-    return <UserDetailView user={selectedUser} onBack={() => setView('list')} />;
+    return <UserDetailView user={selectedUser} onBack={handleBackToList} />;
   }
 
   return (
@@ -90,13 +128,13 @@ const Users = () => {
       <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems="center" mb={4} spacing={2}>
         <Box>
           <Typography variant="h4" fontWeight="bold">User Directory</Typography>
-          <Typography variant="body2" color="text.secondary">Manage users and view full profiles</Typography>
+          <Typography variant="body2" color="text.secondary">Optimized with Caching & Memoization</Typography>
         </Box>
         <TextField
           placeholder="Search users..."
           size="small"
           value={searchQuery}
-          onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
+          onChange={handleSearchChange}
           sx={{ width: { xs: '100%', md: 300 } }}
           InputProps={{
             startAdornment: <InputAdornment position="start"><Search /></InputAdornment>,
@@ -118,45 +156,32 @@ const Users = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {loading ? (
+              {loading && users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 5 }}><CircularProgress /></TableCell>
+                  <TableCell colSpan={6} align="center" sx={{ py: 5 }}>
+                    <CircularProgress />
+                  </TableCell>
                 </TableRow>
               ) : (
                 users.map((user) => (
-                  <TableRow key={user.id} hover>
-                    <TableCell>
-                      <Stack direction="row" alignItems="center" spacing={2}>
-                        <Avatar src={user.image} sx={{ width: 35, height: 35 }} />
-                        <Typography variant="subtitle2">{user.firstName} {user.lastName}</Typography>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Chip label={user.gender} size="small" sx={{ textTransform: 'capitalize' }} />
-                    </TableCell>
-                    <TableCell>{user.phone}</TableCell>
-                    <TableCell>{user.company?.name}</TableCell>
-                    <TableCell align="right">
-                      <Tooltip title="View Full Details">
-                        <IconButton color="primary" size="small" onClick={() => fetchUserDetails(user.id)}>
-                          <Visibility fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
+                  <UserTableRow 
+                    key={user.id} 
+                    user={user} 
+                    onViewDetails={handleViewDetails} 
+                  />
                 ))
               )}
             </TableBody>
           </Table>
         </TableContainer>
+        
         <TablePagination
           component="div"
           count={totalUsers}
           page={page}
           onPageChange={handlePageChange}
           rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={handleRowsChange}
+          onRowsPerPageChange={handleRowsPerPageChange}
           rowsPerPageOptions={[5, 10, 20]}
         />
       </Paper>

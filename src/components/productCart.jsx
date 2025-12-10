@@ -12,9 +12,9 @@ import {
   Stack 
 } from '@mui/material';
 import Link from 'next/link';
-import { Visibility, ShoppingCart } from '@mui/icons-material';
+import { Visibility } from '@mui/icons-material';
 
-export default function ProductCard({ product }) {
+const ProductCard = ({ product }) => {
   return (
     <Card 
       elevation={2} 
@@ -33,6 +33,7 @@ export default function ProductCard({ product }) {
           image={product.thumbnail}
           alt={product.title}
           sx={{ height: 200, objectFit: 'cover', bgcolor: '#f5f5f5' }}
+          loading="lazy" // Performance: Lazy load off-screen images
         />
         <Chip 
           label={product.category} 
@@ -84,4 +85,8 @@ export default function ProductCard({ product }) {
       </CardActions>
     </Card>
   );
-}
+};
+
+// Optimization: React.memo ensures the card only re-renders if 'product' prop changes.
+// Useful when filtering or paginating large grids.
+export default React.memo(ProductCard);

@@ -1,36 +1,242 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+📘 HELP STUDY ABROAD – Frontend Technical Assessment
 
-## Getting Started
+A fully functional frontend web application built using Next.js, Material UI, Zustand, NextAuth, and DummyJSON API.
+This project demonstrates authentication, protected routes, users listing, products listing, product details, pagination, search, filtering, caching, and responsive UI.
 
-First, run the development server:
+🚀 Tech Stack
+Feature	Technology
+Framework	Next.js (JavaScript)
+UI Library	Material UI (MUI)
+State Management	Zustand
+Authentication	NextAuth (Credentials Provider)
+APIs	DummyJSON REST API
+Routing	Next.js Pages Router
+Persistence	localStorage + Zustand Caching
+📦 Features
+🔐 Authentication
 
-```bash
+Login using DummyJSON Auth API
+POST https://dummyjson.com/auth/login
+
+NextAuth Credentials Provider
+
+Store token + user data in Zustand
+
+Protected routes — cannot access dashboard without login
+
+👥 Users Module
+✔ Users List Page
+
+Fetch users:
+GET https://dummyjson.com/users?limit=10&skip=0
+
+Search users:
+GET https://dummyjson.com/users/search?q=...
+
+Pagination (limit + skip)
+
+MUI responsive table/cards
+
+Shows: name, email, phone, gender, company
+
+Route: /users
+
+✔ Single User Page
+
+Fetch single user:
+GET https://dummyjson.com/users/{id}
+
+Clean detail layout using MUI
+
+“Back to Users” link
+
+Route: /users/[id]
+
+🛒 Products Module
+✔ Products List Page
+
+Fetch products:
+GET https://dummyjson.com/products?limit=10&skip=0
+
+Search products:
+GET https://dummyjson.com/products/search?q=...
+
+Category filter:
+GET https://dummyjson.com/products/category/{category}
+
+Custom 4 equal-column grid layout (no margins/padding)
+
+Shows: product image, title, price, category, rating
+
+Pagination supported
+
+Route: /products
+
+✔ Product Detail Page
+
+Fetch product:
+GET https://dummyjson.com/products/{id}
+
+Image carousel
+
+Description, brand, rating, price, stock
+
+“Back to Products” button
+
+Route: /products/[id]
+
+🧠 Zustand State Management
+✔ Used for:
+
+Authentication state
+
+Products list, search, pagination
+
+Categories
+
+Product details
+
+Basic client-side caching using cache[key] pattern
+
+✔ Why Zustand?
+
+Lightweight alternative to Redux
+
+Zero boilerplate
+
+Built-in async function support
+
+Simple selector-based reactivity
+
+Perfect for small/medium apps
+
+🎨 UI / UX
+
+Fully styled with Material UI
+
+Responsive layout for all pages
+
+Auto-adjust grid layout
+
+Clean typography and spacing
+
+Image carousel for product preview
+
+Compact cards with equal height
+
+⚡ Performance Optimizations
+
+API-level pagination (limit + skip)
+
+Zustand store caching (prevents refetching)
+
+Debounce input for search
+
+Pure components + memo
+
+Minimized re-renders using selectors
+
+📁 Project Structure
+/components
+  Layout.jsx
+  ProductCard.jsx
+  ImageCarousel.jsx
+  ProtectedRoute.jsx
+
+/pages
+  /auth
+    login.jsx
+    signup.jsx (UI only)
+  /users
+    index.jsx
+    [id].jsx
+  /products
+    index.jsx
+    [id].jsx
+  _app.js
+  index.js
+
+/stores
+  useAuthStore.js
+  useProductsStore.js
+  useUsersStore.js
+
+/utils
+  api.js
+
+🛠 Installation & Setup
+1️⃣ Clone the repository
+git clone https://github.com/your-username/help-study-abroad-frontend.git
+cd help-study-abroad-frontend
+
+2️⃣ Install dependencies
+npm install
+
+
+or
+
+yarn
+
+3️⃣ Environment Variables
+
+Create .env.local:
+
+NEXTAUTH_SECRET=your-secret-key
+NEXTAUTH_URL=http://localhost:3000
+
+4️⃣ Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+App will run at:
+👉 http://localhost:3000
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+🔑 Demo Login Credentials (DummyJSON)
 
-## Learn More
+Use this for login:
 
-To learn more about Next.js, take a look at the following resources:
+username:emilys
+password: emilyspass
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+(These are public DummyJSON test credentials.)
 
-## Deploy on Vercel
+❗ Notes & Limitations
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Signup is UI-only (DummyJSON does not support user registration).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+All data is dummy test data from DummyJSON.
+
+API responses are cached for performance but reset on refresh.
+
+📌 What is Completed
+
+✔ Authentication (NextAuth + Zustand)
+✔ Protected routes
+✔ Users list + pagination + search
+✔ Single user view
+✔ Products list + search + category filter + pagination
+✔ Product detail page
+✔ Zustand caching
+✔ Responsive MUI UI
+✔ Clean folder structure
+✔ README included
+
+📌 What Can Be Improved (Optional)
+
+Dark/light theme toggle
+
+Add “Add to Cart” functionality
+
+Server-side rendering (SSR) for SEO
+
+Infinite scrolling for products
+
+🧑‍💻 Author
+
+Alok Mourya
+Frontend Developer • React • Next.js • JavaScript
+
+❤️ Thank you for reviewing my project!
+
+If you want, I can also create a professional GitHub description, project banner, or deployment guide.
