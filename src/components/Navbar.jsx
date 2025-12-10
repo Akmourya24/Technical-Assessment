@@ -13,17 +13,20 @@ import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import AdbIcon from '@mui/icons-material/Adb';
-import { useRouter} from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from '../stores/useAuthStore'; // Import your store
 
-const pages = [ 'User', 'Products', 'Blog'];
+const pages = ['User', 'Products', 'Blog'];
 const settings = ['Profile', 'Account', 'Dashboard', 'Logout'];
-
 
 function ResponsiveAppBar() {
   const [anchorElNav, setAnchorElNav] = React.useState(null);
   const [anchorElUser, setAnchorElUser] = React.useState(null);
-
-const router = useRouter()
+  
+  const router = useRouter();
+  
+  // Get Auth state and actions from store
+  const { isAuthenticated, clearAuth, user } = useAuthStore();
 
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
@@ -40,12 +43,41 @@ const router = useRouter()
     setAnchorElUser(null);
   };
 
-  const handleProducts = () => {
-    router.push("/products");
+  // --- Logic to handle Page Navigation ---
+  const handlePageClick = (page) => {
+    handleCloseNavMenu();
+
+    // 1. Check strict routes (User & Products)
+    if (page === 'User' || page === 'Products') {
+      if (!isAuthenticated) {
+        // If not logged in, force to login page
+        router.push("/");
+        return;
+      }
+    }
+
+    // 2. Navigate based on selection
+    if (page === 'Products') {
+      router.push("/products");
+    } else if (page === 'User') {
+      router.push("/users"); // Fixed: Was router.back(), changed to router.push('/users')
+    } else if (page === 'Blog') {
+      router.push("/");
+    }
   };
-  const handleUsers = () => {
-    router.back ();
+
+  // --- Logic to handle Settings (Logout) ---
+  const handleSettingClick = (setting) => {
+    handleCloseUserMenu();
+    
+    if (setting === 'Logout') {
+      clearAuth(); // Clear Zustand store & localStorage
+      router.push("/");
+    } else if (setting === 'Profile') {
+      router.push("/profile");
+    }
   };
+
   return (
     <AppBar position="static">
       <Container maxWidth="xl">
@@ -55,7 +87,7 @@ const router = useRouter()
             variant="h6"
             noWrap
             component="a"
-            href="#app-bar-with-responsive-menu"
+            href="/"
             sx={{
               mr: 2,
               display: { xs: 'none', md: 'flex' },
@@ -69,6 +101,7 @@ const router = useRouter()
             LOGO
           </Typography>
 
+          {/* Mobile Menu */}
           <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
             <IconButton
               size="large"
@@ -97,18 +130,20 @@ const router = useRouter()
               sx={{ display: { xs: 'block', md: 'none' } }}
             >
               {pages.map((page) => (
-                <MenuItem key={page} onClick={handleCloseNavMenu}>
+                <MenuItem key={page} onClick={() => handlePageClick(page)}>
                   <Typography sx={{ textAlign: 'center' }}>{page}</Typography>
                 </MenuItem>
               ))}
             </Menu>
           </Box>
+
+          {/* Desktop Menu */}
           <AdbIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} />
           <Typography
             variant="h5"
             noWrap
             component="a"
-            href="#app-bar-with-responsive-menu"
+            href="/"
             sx={{
               mr: 2,
               display: { xs: 'flex', md: 'none' },
@@ -126,41 +161,51 @@ const router = useRouter()
             {pages.map((page) => (
               <Button
                 key={page}
-                onClick={page === 'Products' ? handleProducts : page === 'Users' ? handleUsers : undefined}
+                onClick={() => handlePageClick(page)}
                 sx={{ my: 2, color: 'white', display: 'block' }}
               >
                 {page}
               </Button>
             ))}
           </Box>
+
+          {/* User Settings / Login Button */}
           <Box sx={{ flexGrow: 0 }}>
-            <Tooltip title="Open settings">
-              <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                <Avatar alt="Remy Sharp" src="/static/images/avatar/2.jpg" />
-              </IconButton>
-            </Tooltip>
-            <Menu
-              sx={{ mt: '45px' }}
-              id="menu-appbar"
-              anchorEl={anchorElUser}
-              anchorOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              open={Boolean(anchorElUser)}
-              onClose={handleCloseUserMenu}
-            >
-              {settings.map((setting) => (
-                <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                  <Typography sx={{ textAlign: 'center' }}>{setting}</Typography>
-                </MenuItem>
-              ))}
-            </Menu>
+            {isAuthenticated ? (
+              <>
+                <Tooltip title="Open settings">
+                  <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+                    <Avatar alt={user?.username || "User"} src={user?.image || "/static/images/avatar/2.jpg"} />
+                  </IconButton>
+                </Tooltip>
+                <Menu
+                  sx={{ mt: '45px' }}
+                  id="menu-appbar"
+                  anchorEl={anchorElUser}
+                  anchorOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                  keepMounted
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                  open={Boolean(anchorElUser)}
+                  onClose={handleCloseUserMenu}
+                >
+                  {settings.map((setting) => (
+                    <MenuItem key={setting} onClick={() => handleSettingClick(setting)}>
+                      <Typography sx={{ textAlign: 'center' }}>{setting}</Typography>
+                    </MenuItem>
+                  ))}
+                </Menu>
+              </>
+            ) : (
+              <Button color="inherit" onClick={() => router.push('/')}>
+                Login
+              </Button>
+            )}
           </Box>
         </Toolbar>
       </Container>
